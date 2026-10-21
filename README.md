@@ -1,0 +1,2 @@
+# dippo
+Diphone Speech Synthesizer
