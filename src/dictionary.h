@@ -1,8 +1,5 @@
 /* dictionary.h
  *
- */
-/* dictionary.h
- *
  * Copyright 2026 Alan Crispin <crispinalan@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,6 +17,13 @@
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
+/**
+ * @file dictionary.h
+ * @brief Header file for dictionary lookup functionality in Dippo's speech synthesizer.
+ * 
+ * This file contains the data structures and function prototypes for word lookup
+ * and phonetic transcription retrieval in the Dippo system.
+ */
 #ifndef DICTIONARY_H
 #define DICTIONARY_H
 
@@ -28,15 +32,36 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+/**
+ * @brief Structure representing a word entry in the dictionary.
+ * 
+ * This structure holds a word and its corresponding diphone phonetic transcription.
+ */
 typedef struct {
     char *word;
-    char *diphone_str; // Pointer to the raw WAV data
+    char *diphone_str; // The complete diphone sequence for this word
     
 } WordEntry;
 
 // Function prototypes
-//WordEntry* find_diphone_str(char* word);
+/**
+ * @brief Find a word entry in the dictionary by word name
+ * 
+ * This function searches for a given word in the dictionary and returns its 
+ * corresponding WordEntry structure if found.
+ * 
+ * @param word Pointer to null-terminated string containing the word to search for
+ * @return Pointer to WordEntry if found, NULL otherwise
+ */
 WordEntry* find_word_entry(const char* word);
 
- 
+/**
+ * @brief Get the total number of entries in dictionary
+ * 
+ * This function returns the total number of words stored in the dictionary table.
+ * 
+ * @return Number of entries in the dictionary
+ */
+int get_dictionary_size(void);
+
 #endif//DICTIONARY_H
