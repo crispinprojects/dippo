@@ -25,8 +25,8 @@
  * functions used by Dippo, including WAV file generation and diphone processing.
  */
 
-#ifndef WAVE_GENERATOR_H
-#define WAVE_GENERATOR_H
+#ifndef SYNTHESIZER_H
+#define SYNTHESIZER_H
 
 #include <stdio.h>
 #include <stdint.h>

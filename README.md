@@ -141,11 +141,8 @@ The system routes characters into highly optimized predictive logic branches (pr
 
 5. **Synthesizer & Vocoder (synthesizer.c)**
 
-The vocoder is the component responsible for taking a diphone sequence and generating the final audio samples. The **overlap-add** method is used to concatenate the recorded diphone raw audio units. It smooths the joins between recorded diphone units to eliminate audible clicks and digital discontinuities. 
+The vocoder is the component responsible for taking a diphone sequence and generating the final audio samples. The **overlap-add** method is used to concatenate the recorded diphone raw audio units. It smooths the joins between recorded diphone units to eliminate audible clicks and digital discontinuities. At each diphone boundary join, it overlaps a short trailing tail of the outgoing unit with the opening segment of the incoming unit using complementary cross-fade windows:
 
-At each diphone boundary join, it overlaps a short trailing tail of the outgoing unit with the opening segment of the incoming unit using complementary cross-fade windows:
-\(y[n]=w_{1}[n]x_{1}[n]+w_{2}[n]x_{2}[n]\)
-Where \(x_{1}\) and \(x_{2}\) represent the overlapping waveforms, and \(w_{1}\) and \(w_{2}\) are complementary linear fade coefficients chosen so their combined volume sum remains constant.
 
 ## Compilation & Usage
 
