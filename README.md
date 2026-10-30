@@ -3,7 +3,7 @@
 Dippo is a lightweight, concatenative diphone speech synthesiser written in pure standard ISO C for Linux systems with a command-line interface (CLI).
 
 ```
-./dippo "dippo is not a hippo" -tempo 1.75 -av 1.5  -wav out.wav && aplay out.wav
+./dippo "dippo is not a hippo" -tempo 1.4 -av 1.5  -wav out.wav && aplay out.wav
 ```
 The long-term goal of the project is to serve as a high-clarity, context-aware audio announcement subsystem for the [Talk Calendar](https://github.com/crispinprojects/talkcalendar) project.
 
@@ -130,19 +130,43 @@ const char* predictE(char p, char c, char n, char nn, char nnn) {
 }
 ```
 
-The patterns in the predict rules were learned from the [CMU Pronouncing Dictionary](http://www.speech.cs.cmu.edu/cgi-bin/cmudict#about)  which was used as the pronunciation corpus. This contains 134,000 words and their phoneme transcriptions.
+The patterns in the predict rules were learned from the [CMU Pronouncing Dictionary](http://www.speech.cs.cmu.edu/cgi-bin/cmudict#about)  which was used as the pronunciation corpus. This contains 134,000 words and their phoneme transcriptions. My CART-Based Grapheme-to-Phoneme (G2P) Rule Generator & Tester [project](https://github.com/crispinprojects/g2p-rule-generator) explains how I developed the G2P engine.
 
-- **Digraph Detection**: Recognizes combinations like `th`, `sh`, `ch` as single phonetic units
-- **Vowel Patterns**: Handles "Magic E" (like in "cake"), silent final e, vowel clusters  
-- **Context Rules**: Changes pronunciation based on neighbours (`'t'` sounds different after `'s'` vs `'h'`)
-- **Special Cases**: Handles irregular pronunciations like `gn`, `wh`, `ph`
+The G2P engine while not perfect always tries to achieve a pronunciation for a word not in the dictionary (unknown word).
 
-The system routes characters into highly optimized predictive logic branches (predictA through predictZ) to seamlessly detect digraphs (th, sh), silent terminations, and irregular vowel shifts.
 
 5. **Synthesizer & Vocoder (synthesizer.c)**
 
-The vocoder is the component responsible for taking a diphone sequence and generating the final audio samples. The **overlap-add** method is used to concatenate the recorded diphone raw audio units. It smooths the joins between recorded diphone units to eliminate audible clicks and digital discontinuities. At each diphone boundary join, it overlaps a short trailing tail of the outgoing unit with the opening segment of the incoming unit using complementary cross-fade windows:
+The vocoder is the component responsible for taking a diphone sequence and generating the final audio samples. Early versions of dippo used a basic  **overlap-add** (OLA) method to concatenate the recorded diphone raw audio units. OLA smooths the joins between recorded diphone units to eliminate audible clicks and digital discontinuities. At each diphone boundary join, it overlaps a short trailing tail of the outgoing unit with the opening segment of the incoming unit using complementary cross-fade windows.
 
+Dippo version 0.3 has moved from basic OLA to PSOLA (Pitch-Synchronous Overlap-Add). OLA windows audio at fixed intervals. PSOLA windows audio dynamically, centering each frame precisely on a pitch mark (glottal pulse epoch). Dippo defaults to PSOLA.
+
+The **Pitch-Synchronous Overlap-and-Add (PSOLA)** is a speech synthesis technique used to modify the **pitch** and **duration** of diphone-based speech segments while preserving naturalness. It works by:
+
+1. **Pitch Marking**:
+   - The input waveform is analyzed using an **AMDF (Average Magnitude Difference Function)** algorithm to detect pitch periods.
+   - These periods are marked as **epochs** (instantaneous points of maximum excitation in the vocal tract).
+   - Epochs define where each pitch cycle begins, enabling precise manipulation.
+
+2. **Time-Pitch Modification**:
+   - For **time-stretching**, epochs are spaced further apart or closer together.
+   - For **pitch-shifting**, the spacing between epochs is adjusted while maintaining waveform integrity.
+   - A **triangular window** is applied around each epoch to smoothly overlap and add segments.
+
+3. **Overlap-and-Add (OLA)**:
+   - Adjacent pitch periods are overlapped with a fading window to avoid discontinuities.
+   - The amplitude scaling factor (`av`) controls loudness, while the tempo factor adjusts speed.
+   
+In `synthesizer.c`, PSOLA is implemented via:
+- `amdf_pitch_tracker()` → Detects epochs.
+- `vocoder_psola()` → Applies time-pitch modifications using epoch spacing and windowing.
+- `create_calendar_intonation_envelope()`  → Intonation contour mapping.
+
+### **Key Advantages PSOLA**
+
+- Preserves natural speech quality by synchronising modifications to natural pitch cycles.
+- Enables dynamic intonation changes (e.g., rising/falling pitch in phrases).
+- Computationally efficient compared to phase vocoders for real-time applications.
 
 ## Compilation & Usage
 
@@ -185,27 +209,20 @@ options:
 
 1. **Baseline Text and Pre-processing Verification**
 
+Dippo defaults to the PSOLA mode.
 ```
-./dippo "Hello, World!" -tempo 1.75 -av 1.5 -wav date.wav && aplay date.wav
+ ./dippo "Dippo, is not a Hippo!" -tempo 2.0 -av 1.5 -wav out.wav && aplay out.wav
 ```
-Output Trace Log:
-
+Using the OLA mode.
 ```
-Input: Hello, World!
-Tempo: 1.75, Volume Factor: 1.50
-Processing phrase: "Hello, World!"
-DEBUG: Processing token 'Hello'
-DEBUG: Processing token 'World'
-DEBUG: Final preprocessed text: 'Hello World'
-After preprocessing: "Hello World"
-Looking up: 'Hello'
-Found diphones for 'Hello': pau_hh hh_ah ah_l l_ow ow_pau
+./dippo "Dippo, is not a Hippo!" -mode ola -tempo 2.0 -av 1.5 -wav out.wav && aplay out.wav
 ```
 
 2. **Automatic Date Transformation**
 
 ```
-./dippo "Saturday 24th October 2026" -tempo 1.6 -wav calendar.wav && aplay calendar.wav
+./dippo "Friday 30th October" -tempo 2.0 -av 1.5 -wav out.wav && aplay out.wav
+
 ```
 3. **Time**
 
@@ -217,10 +234,10 @@ Consequently there are two dictionary entries "am" and "amtime" to distinguish b
 ```
 There is also a "pmtime" dictionary entry.
 ```
-./dippo "the time is 11:07 amtime" -tempo 1.75 -av 1.5  -wav date.wav && aplay date.wav
+./dippo "the time is 11:07 amtime" -tempo 2.0 -av 1.5  -wav out.wav && aplay out.wav
 ```
 ```
-./dippo "the time is 6:04 pmtime" -tempo 1.75 -av 1.5  -wav date.wav && aplay date.wav
+./dippo "the time is 6:04 pmtime" -tempo 2.0 -av 1.5  -wav out.wav && aplay out.wav
 ```
 
 4. **Dynamic Plural Aggregation**

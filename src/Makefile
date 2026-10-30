@@ -9,7 +9,7 @@ TARGET = dippo
 all: $(TARGET)
 
 $(TARGET): $(OBJECTS) 
-	$(CC) -o $@ $(OBJECTS)
+	$(CC) -o $@ $(OBJECTS) -lm
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@

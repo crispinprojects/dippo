@@ -1,28 +1,10 @@
-/* synthesizer.h
- *
- * Copyright 2026 Alan Crispin <crispinalan@gmail.com>
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * SPDX-License-Identifier: GPL-3.0-or-later
- */
 /**
  * @file synthesizer.h
- * @brief Header file for audio synthesis functionality in Dippo.
- * 
- * This header file contains declarations and prototypes for the core audio synthesis
- * functions used by Dippo, including WAV file generation and diphone processing.
+ * @brief Header file for the voice synthesizer with diphone synthesis.
+ *
+ * This file contains the function declarations and data structures used for
+ * overlap-add logic in diphone-based speech synthesis. It supports PSOLA (Pitch
+ * Synchronous Overlap and Add) and OLA (Overlap and Add) vocoding techniques.
  */
 
 #ifndef SYNTHESIZER_H
@@ -31,44 +13,106 @@
 #include <stdio.h>
 #include <stdint.h>
 
-// Forward declaration of diphone entry structure 
+/**
+ * @struct DiphoneData
+ * @brief Represents a diphone entry with metadata.
+ *
+ * Contains the name, raw data pointer, and size of a diphone sample.
+ */
+typedef struct {
+    const char* name;          /**< Name identifier of the diphone */
+    const unsigned char* data; /**< Pointer to raw diphone waveform data */
+    unsigned int size;         /**< Size of the diphone data in bytes */
+} DiphoneData;
 
 /**
- * @brief Write WAV header to file
- * 
- * This function writes the standard WAV file header structure to a file.
- * It sets up proper format information including sample rate, channels,
- * and data size for PCM audio.
- * 
- * @param file Pointer to FILE structure where header will be written
- * @param data_size Size of the audio data in bytes
+ * @struct PitchMarks
+ * @brief Stores pitch period markers (epoch indices) for a diphone.
+ *
+ * Used in PSOLA vocoding to track pitch periods for time-scale modification.
+ */
+typedef struct {
+    int* sample_indices; /**< Array of epoch indices (pitch marks) */
+    int num_marks;       /**< Number of detected epochs */
+} PitchMarks;
+
+/**
+ * @struct PSOLA_DiphoneEntry
+ * @brief Enhanced diphone entry with pitch information for PSOLA synthesis.
+ *
+ * Extends DiphoneData with pitch period markers for dynamic pitch manipulation.
+ */
+typedef struct {
+    const char* name;          /**< Name identifier of the diphone */
+    const int16_t* data;       /**< Pointer to processed waveform data (int16) */
+    int size;                  /**< Size of the waveform data in bytes */
+    PitchMarks epochs;         /**< Pitch period markers for PSOLA */
+} PSOLA_DiphoneEntry;
+
+/**
+ * @brief Computes pitch periods using Average Magnitude Difference Function (AMDF).
+ *
+ * Analyzes a waveform segment to detect pitch periods by finding local minima
+ * in the AMDF function. Returns an array of epoch indices.
+ *
+ * @param data Input audio waveform (int16)
+ * @param size Number of samples in the input waveform
+ * @param min_period Minimum expected pitch period (in samples)
+ * @param max_period Maximum expected pitch period (in samples)
+ * @param marks Output array of detected epoch indices (allocated by function)
+ * @return Number of detected epochs, or -1 on failure.
+ */
+int amdf_pitch_tracker(const int16_t* data, size_t size, int min_period, int max_period, int** marks);
+
+/**
+ * @brief Locates and processes a diphone entry for PSOLA synthesis.
+ *
+ * Loads waveform data from a diphone entry and computes its pitch periods using
+ * AMDF. Returns a PSOLA_DiphoneEntry structure with processed data.
+ *
+ * @param name Name of the diphone to retrieve
+ * @return Pointer to PSOLA_DiphoneEntry, or NULL if not found.
+ */
+PSOLA_DiphoneEntry* find_psola_diphone(const char* name);
+
+/**
+ * @brief Writes a WAV file header to the specified file.
+ *
+ * Formats the RIFF/WAVE header with given data size for mono 16-bit PCM audio
+ * at 16 kHz sample rate.
+ *
+ * @param file Output file handle
+ * @param data_size Size of audio data in bytes
  */
 void write_wav_header(FILE* file, int data_size);
 
 /**
- * @brief Apply triangle windowing for smooth transitions
- * 
- * This function applies a triangular window to audio samples to reduce
- * discontinuities when overlapping frames during synthesis.
- * 
- * @param buffer Pointer to array of int16_t audio samples
- * @param frame_size Size of the audio frame in samples
- * @param half_frame Half the frame size for window calculation
+ * @brief Overlap-and-Add (OLA) vocoder for diphone concatenation.
+ *
+ * Synthesizes speech by overlapping and adding diphone segments with adjustable
+ * tempo and amplitude. Supports dynamic buffer expansion for long utterances.
+ *
+ * @param diphone_string Space-separated list of diphones to synthesize
+ * @param output_file Output WAV file handle
+ * @param tempo Time-stretch factor (1.0 = normal speed)
+ * @param av Amplitude scaling factor (1.0 = no change)
  */
-void apply_triangle_window(int16_t* buffer, int frame_size, int half_frame);
+void vocoder_ola(char* diphone_string, FILE* output_file, float tempo, float av);
 
 /**
- * @brief Overlap-add vocoder that takes a string of space-separated diphones
- * 
- * This function performs the core audio synthesis by playing back diphone segments,
- * using overlap-add technique to smoothly transition between them.
- * It handles both first and subsequent diphone playback with proper timing adjustments.
- * 
- * @param diphone_string Pointer to null-terminated string containing space-separated diphones
- * @param output_file Pointer to FILE structure for writing WAV audio data
- * @param tempo Tempo factor controlling speech speed (default = 1.0)
- * @param av Audio volume amplification factor (default = 1.0)
+ * @brief Pitch-Synchronous Overlap-and-Add (PSOLA) vocoder.
+ *
+ * Synthesizes speech with dynamic pitch control by adjusting epoch spacing and
+ * applying a triangular window. Supports phrase-level intonation modulation via
+ * an optional pitch array.
+ *
+ * @param diphone_string Space-separated list of diphones to synthesize
+ * @param output_file Output WAV file handle
+ * @param tempo Time-stretch factor (1.0 = normal speed)
+ * @param av Amplitude scaling factor (1.0 = no change)
+ * @param pitch_array Optional array of target pitches (Hz) per diphone
+ * @param pitch_array_len Length of the pitch array
  */
-void vocoder(char* diphone_string, FILE* output_file, float tempo, float av);
+void vocoder_psola(char* diphone_string, FILE* output_file, float tempo, float av, const float* pitch_array, int pitch_array_len);
 
-#endif // WAVE_GENERATOR_H
+#endif // SYNTHESIZER_H
