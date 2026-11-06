@@ -1,4 +1,4 @@
-/* diphone.c
+/* diphone.cpp
  *
  * Copyright 2026 Alan Crispin <crispinalan@gmail.com>
  *
@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * SPDX-License-Identifier: GPL-3.0-or-later
+ * SPDX-License-Identifier: GNU Lesser General Public License v3.0
  */
  
  /***************************************************************************
@@ -57,10 +57,11 @@
 
 */
 #include "diphone.h"
+#include <cstring>
+#include <iostream>
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
+Diphone::Diphone() {    
+}
 
 //The actual audio data arrays
 const unsigned char aa_aa_wav[] = {
@@ -576802,9 +576803,7 @@ const unsigned char z_z_wav[] = {
 const unsigned int z_z_wav_len = 3250;
 
 // Define the table here
-//const DiphoneEntry Diphone::diphone_table[] = {
-
-static DiphoneEntry diphone_table[] = {
+const DiphoneEntry Diphone::diphone_table[] = {
     {"aa_aa", aa_aa_wav,aa_aa_wav_len},
     {"aa_ae", aa_ae_wav,aa_ae_wav_len},
     {"aa_ah", aa_ah_wav,aa_ah_wav_len},
@@ -578426,21 +578425,17 @@ static DiphoneEntry diphone_table[] = {
     {"z_z",z_z_wav,z_z_wav_len}
 };
 
-const unsigned int diphone_table_size = sizeof(diphone_table) / sizeof(diphone_table[0]);
+const unsigned int Diphone::diphoneTableSize = sizeof(Diphone::diphone_table) / sizeof(DiphoneEntry);
 
-/**
- * @brief get diphone WAV array and length
- * @param diphone string (e.g. z_zh)
- */
-DiphoneEntry* find_diphone_entry(const char* diphone_str) {
-  if (diphone_str == NULL) {
-    return NULL;
-  }
-  for (unsigned int i = 0; i < diphone_table_size; ++i) {
-    if (strcmp(diphone_table[i].name, diphone_str) == 0) {
-      return &diphone_table[i];
+
+DiphoneEntry* Diphone::findDiphoneEntry(const char* diphoneStr) {
+    if (!diphoneStr) return nullptr;
+
+    for (unsigned int i = 0; i < diphoneTableSize; ++i) {
+        if (std::strcmp(diphone_table[i].name, diphoneStr) == 0) {
+            return const_cast<DiphoneEntry*>(&diphone_table[i]);
+        }
     }
-  }
-  return NULL; // Diphone not found
+    return nullptr;
 }
 

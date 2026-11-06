@@ -1,4 +1,4 @@
-/* dictionary.h
+/*
  *
  * Copyright 2026 Alan Crispin <crispinalan@gmail.com>
  *
@@ -9,59 +9,74 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://gnu.org>.
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
- */
-/**
- * @file dictionary.h
- * @brief Header file for dictionary lookup functionality in Dippo's speech synthesizer.
- * 
- * This file contains the data structures and function prototypes for word lookup
- * and phonetic transcription retrieval in the Dippo system.
  */
 #ifndef DICTIONARY_H
 #define DICTIONARY_H
 
-#include <stdio.h>
-#include <string.h> 
-#include <stdlib.h>
-#include <stdint.h>
+#include <string>
+#include <vector>
+#include <map>
+#include <ctime>
 
-/**
- * @brief Structure representing a word entry in the dictionary.
- * 
- * This structure holds a word and its corresponding diphone phonetic transcription.
- */
-typedef struct {
-    char *word;
-    char *diphone_str; // The complete diphone sequence for this word
-    
-} WordEntry;
+class Dictionary {
+public:
+    explicit Dictionary();
 
-// Function prototypes
-/**
- * @brief Find a word entry in the dictionary by word name
- * 
- * This function searches for a given word in the dictionary and returns its 
- * corresponding WordEntry structure if found.
- * 
- * @param word Pointer to null-terminated string containing the word to search for
- * @return Pointer to WordEntry if found, NULL otherwise
- */
-WordEntry* find_word_entry(const char* word);
+    std::string getTimePhrase(int hour, int minute, bool isAllDay);
+    std::string getDatePhrase(const std::tm& date);
+    std::string getOrdinalStr(int day);
+    std::string getCardinalStr(int number);
 
-/**
- * @brief Get the total number of entries in dictionary
- * 
- * This function returns the total number of words stored in the dictionary table.
- * 
- * @return Number of entries in the dictionary
- */
-int get_dictionary_size(void);
+    std::vector<std::string> transcribeWordDecisionTree(const std::string& word);
 
-#endif//DICTIONARY_H
+private:
+    std::map<std::string, std::vector<std::string>> m_data;
+    std::map<char, std::string> m_consonantMap;
+    std::map<std::string, std::string> m_vowelClusterMap;
+    std::map<char, std::string> m_vowelMap;
+
+    std::vector<std::string> buildDiphoneList(const std::vector<std::string>& phonemes);
+
+    //Decision tree
+    //c=current, p=previous, n=next nn=nextnext nnn=nextnextnext
+    // nn and nnn are LOOK-AHEAD
+
+    std::string predictA(char p, char c, char n, char nn, char nnn);
+    std::string predictB(char p, char c, char n, char nn, char nnn);
+    std::string predictC(char p, char c, char n, char nn, char nnn);
+    std::string predictD(char p, char c, char n, char nn, char nnn);
+    std::string predictE(char p, char c, char n, char nn, char nnn);
+    std::string predictF(char p, char c, char n, char nn, char nnn);
+    std::string predictG(char p, char c, char n, char nn, char nnn);
+    std::string predictH(char p, char c, char n, char nn, char nnn);
+    std::string predictI(char p, char c, char n, char nn, char nnn);
+    std::string predictJ(char p, char c, char n, char nn, char nnn);
+    std::string predictK(char p, char c, char n, char nn, char nnn);
+    std::string predictL(char p, char c, char n, char nn, char nnn);
+    std::string predictM(char p, char c, char n, char nn, char nnn);
+    std::string predictN(char p, char c, char n, char nn, char nnn);
+    std::string predictO(char p, char c, char n, char nn, char nnn);
+    std::string predictP(char p, char c, char n, char nn, char nnn);
+    std::string predictQ(char p, char c, char n, char nn, char nnn);
+    std::string predictR(char p, char c, char n, char nn, char nnn);
+    std::string predictS(char p, char c, char n, char nn, char nnn);
+    std::string predictT(char p, char c, char n, char nn, char nnn);
+    std::string predictU(char p, char c, char n, char nn, char nnn);
+    std::string predictV(char p, char c, char n, char nn, char nnn);
+    std::string predictW(char p, char c, char n, char nn, char nnn);
+    std::string predictX(char p, char c, char n, char nn, char nnn);
+    std::string predictY(char p, char c, char n, char nn, char nnn);
+    std::string predictZ(char p, char c, char n, char nn, char nnn);
+
+    void initializeLexicon();
+    void setupG2PRules();
+};
+
+#endif // DICTIONARY_H
