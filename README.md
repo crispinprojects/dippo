@@ -2,13 +2,8 @@
 
 Dippo is a lightweight concatenative diphone speech synthesiser.
 
-A screenshot of Dippo is shown below.
+This current version has been rewritten from scratch using C++ 17.
 
-![](dippo.png)
-
-This current version has been rewriiten from scratch using C++ 17 and uses Qt6 for a simple graphical user interface.
-
-The long-term goal of the project is to serve as a high-clarity, context-aware audio announcement subsystem for the [Talk Calendar](https://github.com/crispinprojects/talkcalendar) project.
 
 ## Technical Overview & Core Concepts
 
@@ -28,32 +23,19 @@ Source Directory Layout
 
 ```
 dippo/
-├── main.cpp            # Application entry point
-├── mainwindow.cpp      # Qt6 GUI
-├── mainwindow.h    
-├── sanitizer.cpp       # Text ormalisation and number expansion
-├── sanitizer.h        
-├── dictionary.cpp      # Lookup word diphone mapping and Grapheme-to-Phoneme engine
+├── main.cp              # Application entry point
+├── text_processor.cpp   # Text normalisation and number expansion
+├── text_processor.h        
+├── g2p_engine.cpp      # Lookup word diphone mapping and Grapheme-to-Phoneme engine
 ├── g2p_engine.h        
-├── diphone.cpp         # Embedded audio waveform data and acoustic indexing arrays
+├── diphone.c           # Embedded audio waveform data and acoustic indexing arrays
 ├── diphone.h           
-├── synthesizer.cpp     # Overlap-add audio concatenation and vocoder execution
+├── synthesizer.c       # Overlap-add audio concatenation and vocoder execution
 ├── synthesizer.h       
-└── compile-and-run     # BASH script to build project
+└── Makefile            # Build project
 ```
 
-## Pipeline Chain
-
-1. **GUI (mainwindow.cpp)**
-
-The mainwindow.cpp file provides the Qt GUI. A QLineEdit is used for text entry and QPushButton to invoke the speech synthesizer.
-
-2. **Text Processing (sanitizer.cpp)**
-
-Implements preprocessing to clean input strings and expand numeric data before vocabulary matching:
-
-
-3. **Dictionary (dictionary.cpp)**
+## G2P Engine (g2p_engine.cpp)
 
 Performs lookup of word diphone sequence mapping. 
 
@@ -96,7 +78,7 @@ The patterns in the predict rules were learned from the [CMU Pronouncing Diction
 The G2P engine while not perfect always tries to achieve a pronunciation for a word not in the dictionary (unknown word).
 
 
-4. **Synthesizer & Vocoder (synthesizer.cpp)**
+## Synthesizer & Vocoder (synthesizer.cpp)
 
 The vocoder is the component responsible for taking a diphone sequence and generating the final audio samples. This C++ version of Dippo uses the  **overlap-add** (OLA) method to concatenate the recorded diphone raw audio units. OLA smooths the joins between recorded diphone units to eliminate audible clicks and digital discontinuities. At each diphone boundary join, it overlaps a short trailing tail of the outgoing unit with the opening segment of the incoming unit using complementary cross-fade windows.
 
@@ -112,43 +94,64 @@ sudo apt update
 sudo apt install build-essential 
 sudo apt install alsa-utils
 ```
-You also need to install cmake and the Qt6 libraries.
-
-```
-sudo apt update
-sudo apt install build-essential cmake ninja-build
-sudo apt install qt6-base-dev qt6-base-dev-tools
-```
 
 ## Building From Source
 
-Compile the project using the compile-and-run.sh BASH script which should be located in the source code directory.
+Compile the project using the Makefile which should be located in the source code directory.
 
 ```
-./compile-and-run
-
-
-Building project...
-[ 14%] Building CXX object CMakeFiles/dippo-qt.dir/main.cpp.o
-[ 28%] Building CXX object CMakeFiles/dippo-qt.dir/mainwindow.cpp.o
-[ 42%] Building CXX object CMakeFiles/dippo-qt.dir/sanitizer.cpp.o
-[ 57%] Building CXX object CMakeFiles/dippo-qt.dir/synthesizer.cpp.o
-[ 71%] Building CXX object CMakeFiles/dippo-qt.dir/dictionary.cpp.o
-[ 85%] Building CXX object CMakeFiles/dippo-qt.dir/diphone.cpp.o
-[100%] Linking CXX executable dippo-qt
-[100%] Built target dippo-qt
-Executing application...
-
+./make
 ```
 
 ## Practical Verification Examples
 
+```
+./dippo
+Speech Synthesizer - Type text to speak (type 'quit' to exit)
+
+Enter text to speak: Dippo, is not a hippo!
+Input text: "Dippo, is not a hippo!"
+Processed Text: "dippo  is not a hippo "
+Word: is Phonemes: pau_ih ih_s s_pau 
+Word: not Phonemes: pau_n n_aa aa_t t_pau 
+Word: a Phonemes: pau_ae ae_pau 
+Audio saved to diphone_out.wav
+Playing audio in background...
+Playing WAVE 'diphone_out.wav' : Signed 16 bit Little Endian, Rate 16000 Hz, Mono
+
+Enter text to speak: Tuesday 11th November
+Input text: "Tuesday 11th November"
+Processed Text: "tuesday  eleventh november"
+Audio saved to diphone_out.wav
+Playing audio in background...
+Playing WAVE 'diphone_out.wav' : Signed 16 bit Little Endian, Rate 16000 Hz, Mono
+
+Enter text to speak: The time is 21:17
+Input text: "The time is 21:17"
+Processed Text: "the time is  twenty one  seventeen"
+Word: time Phonemes: pau_t t_ay ay_m m_pau 
+Word: is Phonemes: pau_ih ih_s s_pau 
+Audio saved to diphone_out.wav
+Playing audio in background...
+Playing WAVE 'diphone_out.wav' : Signed 16 bit Little Endian, Rate 16000 Hz, Mono
+
+Enter text to speak: Visit London
+Input text: "Visit London"
+Processed Text: "visit london"
+Word: visit Phonemes: pau_v v_ih ih_s s_ih ih_t t_pau 
+Word: london Phonemes: pau_l l_aa aa_n n_d d_aa aa_n n_pau 
+Audio saved to diphone_out.wav
+Playing audio in background...
+Playing WAVE 'diphone_out.wav' : Signed 16 bit Little Endian, Rate 16000 Hz, Mono
+
+Enter text to speak: 
+```
+
+These examples demonstrate:
 
 1. **Baseline Text and Pre-processing Verification**
 
-Use a phrase line "Dippo, is not a Hippo!" to confirm that puncuations do not prevent speech.
-
-![](dippo-preprocessing.png)
+Use a  phrase line "Dippo, is not a Hippo!" to confirm that puncuations do not prevent speech.
 
 
 2. **Automatic Date Transformation**
@@ -158,20 +161,18 @@ Use a phrase like "Friday 30th October" to confirm that 30th is expanded.
 
 3. **Time**
 
-With time entries there is a clash with "am" the verb and "am" meaning time A.M. 
-Consequently there are two dictionary entries "am" and "amtime" to distinguish between the two cases.
-
-Phrases like "the time is 11:47 amtime" and "the time is 10:40 pmtime" can be used.
+A phrase like "the time is 11:47" can be used.
 
 
 4. **Unknown word (G2P Engine)**
 
-When dippo encounters a word not in the dictionary (unknown word) it uses the G2P engine to predict its pronunciation. The word "London"  is not in the dictionary and so is an unknown word. Use the phrase "Visit London" to check how the G2P engine pronounces the word London
+When dippo encounters a word not in the dictionary (unknown word) it uses the G2P engine to predict its pronunciation.
+The word "London"  is not in the dictionary and so is an unknown word. Use the phrase "Visit London" to check how the G2P engine pronouces the word London
 
 
 ## License
 
-Distributed under the **GNU General Public License v3.0**.
+Distributed under the **GPL-2.0-or-later**.
 
 ## Author
 
@@ -190,7 +191,7 @@ Active.
 
 * [Speech Synthesis](https://www.youtube.com/watch?v=eDjtEsOvouM&t=1459s) CMU Low resource NLP Bootcamp 2020  *Author:* Professor Alan W Black 
 
-* Development managed using the [Kate](https://apps.kde.org/en-gb/kate/) source code editor
+* Development managed using the [Geany](https://www.geany.org/) IDE
 
 * [Talk Calendar](https://github.com/crispinprojects/talkcalendar)
 

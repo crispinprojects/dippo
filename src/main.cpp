@@ -1,32 +1,53 @@
-/*
- *
- * Copyright 2026 Alan Crispin <crispinalan@gmail.com>
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://gnu.org>.
- *
- * SPDX-License-Identifier: GPL-3.0-or-later
- */
+#include <iostream>
+#include "g2p_engine.h"
+#include "synthesizer.h"
+#include "text_processor.h"  // Include our new C++ header
+#include <string>
+#include <vector>
 
-#include <QApplication>
-#include "mainwindow.h"
+int main(int argc, char* argv[]) {
+    // Create instances
+    Dictionary m_voiceDict;
+    Synthesizer m_engine;
 
-int main(int argc, char *argv[])
-{
-    QApplication app(argc, argv);
+    // Check if command line arguments are provided
+    if (argc < 2) {
+        std::cout << "Speech Synthesizer - Type text to speak (type 'quit' to exit)" << std::endl;
 
-    MainWindow window;
-    window.show();
+        while (true) {
+            std::string text_input;
+            std::cout << "\nEnter text to speak: ";
+            std::getline(std::cin, text_input);
 
-    return app.exec();
+            if (text_input.empty() || text_input == "quit" || text_input == "exit") {
+                std::cout << "Goodbye!" << std::endl;
+                break;
+            }
+
+            // Preprocess the text using our C++ version
+            std::string processed_text = preprocess_text(text_input);
+
+            std::cout << "Input text: \"" << text_input << "\"" << std::endl;
+            std::cout << "Processed Text: \"" << processed_text << "\"" << std::endl;
+
+            m_engine.speak(processed_text, &m_voiceDict, 1.5f);
+        }
+    } else {
+        // Process command line arguments
+        std::string text_input = "";
+        for (int i = 1; i < argc; ++i) {
+            if (i > 1) text_input += " ";
+            text_input += argv[i];
+        }
+
+        // Preprocess the text using our C++ version
+        std::string processed_text = preprocess_text(text_input);
+
+        std::cout << "Input text: \"" << text_input << "\"" << std::endl;
+        std::cout << "Processed Text: \"" << processed_text << "\"" << std::endl;
+
+        m_engine.speak(processed_text, &m_voiceDict, 1.5f);
+    }
+
+    return 0;
 }
