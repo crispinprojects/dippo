@@ -1,3 +1,7 @@
+ /*
+  * Copyright 2026 Alan Crispin <crispinalan@gmail.com>
+  * SPDX-License-Identifier: GPL-2.0-or-later
+  */
 #ifndef DIPHONE_H
 #define DIPHONE_H
 

@@ -1,4 +1,8 @@
-/* text_processor.h */
+/*
+ * Copyright 2026 Alan Crispin <crispinalan@gmail.com>
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
+
 
 #ifndef TEXT_PROCESSOR_H
 #define TEXT_PROCESSOR_H
@@ -8,11 +12,10 @@
 /**
  * @brief Preprocess input text by handling ordinals and time formats
  *
- * This function performs comprehensive text preprocessing, including:
+ * This function performs text preprocessing, including:
  * - Converting ordinal numbers to words (1st, 2nd, etc.)
- * - Converting numeric times into word representations (153 -> fifteen fifty three)
- * - Handling zero-prefixed numbers like "01", "02"
- * - Converting regular numbers to their word equivalents
+ * - Converting cardinal numbers to words (1st, 2nd, etc.)
+ * - removing punctuations
  *
  * @param input The raw text string to be processed
  * @return Processed text as a std::string

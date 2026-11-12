@@ -1,3 +1,8 @@
+/*
+ * Copyright 2026 Alan Crispin <crispinalan@gmail.com>
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
+
 #include "text_processor.h"
 #include <iostream>
 #include <vector>

@@ -1,3 +1,7 @@
+ /*
+  * Copyright 2026 Alan Crispin <crispinalan@gmail.com>
+  * SPDX-License-Identifier: GPL-2.0-or-later
+  */
 #include <iostream>
 #include "g2p_engine.h"
 #include "synthesizer.h"
